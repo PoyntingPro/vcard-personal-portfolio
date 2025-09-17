@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Viewer - Anirudh Madhusudhan</title>
+    <link rel="stylesheet" href="./assets/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script type="text/javascript" src="https://threejs.org/build/three.js"></script>
+    <script type="text/javascript" src="https://threejs.org/examples/js/loaders/VRMLLoader.js"></script>
+    <script type="text/javascript" src="https://threejs.org/examples/js/libs/stats.min.js"></script>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.5/dat.gui.min.js"></script>
+    <script type="text/javascript" src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <main>
+        <!-- Sidebar -->
+        <aside class="sidebar" data-sidebar>
+            <div class="sidebar-info">
+                <figure class="avatar-box">
+                    <img src="https://media.licdn.com/dms/image/v2/D4E03AQHgGPDegkP5Bw/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1723137610011?e=1760572800&v=beta&t=7TZ_beeunttvaUWL27mBUy1VHeCH_J47QWYEiPefaY0" alt="Anirudh Madhusudhan" width="80">
+                </figure>
+
+                <div class="info-content">
+                    <h1 class="name" title="Anirudh Madhusudhan">Anirudh Madhusudhan</h1>
+                    <p class="title">Electrical Engineer</p>
+                </div>
+
+                <button class="info_more-btn" data-sidebar-btn>
+                    <span>Show Contacts</span>
+                    <ion-icon name="chevron-down"></ion-icon>
+                </button>
+            </div>
+
+            <div class="sidebar-info_more">
+                <div class="separator"></div>
+
+                <div class="project-details">
+                    <div class="project-image">
+                        <img id="project-thumbnail" src="" alt="Project Image" />
+                    </div>
+                    
+                    <div class="project-meta">
+                        <h2 id="project-name" class="name">Project Name</h2>
+                        <p id="project-category" class="title">Category</p>
+                        <p id="project-description">Project description...</p>
+                    </div>
+                </div>
+
+                <div class="separator"></div>
+
+                <ul class="contacts-list">
+                    <li class="contact-item">
+                        <div class="icon-box">
+                            <ion-icon name="logo-github"></ion-icon>
+                        </div>
+                        <div class="contact-info">
+                            <p class="contact-title">Repository</p>
+                            <a id="github-link" href="#" target="_blank" class="contact-link">View on GitHub</a>
+                        </div>
+                    </li>
+                </ul>
+
+                <div class="separator"></div>
+
+                <div class="model-controls">
+                    <div class="contact-item">
+                        <div class="icon-box">
+                            <ion-icon name="cube-outline"></ion-icon>
+                        </div>
+                        <div class="contact-info">
+                            <p class="contact-title">3D Controls</p>
+                        </div>
+                    </div>
+                    <button class="info_more-btn" onclick="resetCamera3D()" style="margin-bottom: 8px;">
+                        <span>Reset View</span>
+                        <ion-icon name="refresh-outline"></ion-icon>
+                    </button>
+                    <button class="info_more-btn" onclick="toggleWireframe3D()">
+                        <span>Wireframe</span>
+                        <ion-icon name="grid-outline"></ion-icon>
+                    </button>
+                </div>
+
+                <div class="separator"></div>
+
+                <div class="tech-stack">
+                    <div class="contact-item">
+                        <div class="icon-box">
+                            <ion-icon name="code-outline"></ion-icon>
+                        </div>
+                        <div class="contact-info">
+                            <p class="contact-title">Technologies</p>
+                        </div>
+                    </div>
+                    <div id="tech-tags" class="tech-tags">
+                        <!-- Tech tags -->
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Back Button -->
+            <nav class="navbar">
+                <ul class="navbar-list">
+                    <li class="navbar-item">
+                        <button class="navbar-link active" onclick="window.history.back()">
+                            <ion-icon name="arrow-back-outline"></ion-icon>
+                            Back to Projects
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- 3D Viewer -->
+            <article class="about active">
+                <header>
+                    <h2 class="h2 article-title" id="project-title">3D Model Viewer</h2>
+                </header>
+
+                <section class="viewer-container">
+                    <div id="loading-indicator" class="loading" style="display: flex;">
+                        <div class="loader"></div>
+                        <p>Loading 3D Model...</p>
+                    </div>
+                    <canvas id="three-canvas"></canvas>
+                </section>
+            </article>
+        </div>
+    </main>
+
+    <script>
+        // Global Three.js variables
+        let scene, camera, renderer, controls;
+        let currentModel = null;
+        let isWireframe = false;
+
+        // Project data
+        const projectData = {
+            'perba': {
+                name: 'PerBa - Automatic Cocktail Mixer',
+                category: 'Automation',
+                description: 'An automated cocktail mixing machine with precision dispensing system, user interface, and recipe management.',
+                github: 'https://github.com/PoyntingPro/PerBa',
+                image: 'https://github.com/anim1311/PerBa/assets/65235028/b070a780-2787-4d52-b3de-943d75119fe0',
+                techStack: ['Arduino', 'C++', 'KiCAD', 'Fusion 360', '3D Printing']
+            },
+            'usb-dac': {
+                name: 'USB-C based DAC',
+                category: 'Electronics', 
+                description: 'High-quality digital-to-analog converter with USB-C interface and professional audio processing.',
+                github: 'https://github.com/PoyntingPro/USB_DAC',
+                image: 'https://github.com/user-attachments/assets/1a4cd634-ebe2-4b9e-8b57-ce525966139d',
+                techStack: ['KiCAD', 'Audio Processing', 'USB-C', 'PCB Design']
+            },
+            'wifiaudiolink2': {
+                name: 'WiFiAudioLink 2',
+                category: 'Electronics',
+                description: 'Advanced wireless audio transmission system with ESP32-based design and real-time streaming.',
+                github: 'https://github.com/PoyntingPro/WifiAudioLink2',
+                image: 'https://github.com/user-attachments/assets/6b79064e-8209-4695-89de-4bac2573f113',
+                techStack: ['ESP32', 'C++', 'WiFi Protocol', 'Audio Processing']
+            }
+        };
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', init);
+
+        function init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const projectId = urlParams.get('project') || 'perba';
+            
+            loadProjectData(projectId);
+            initThreeJS();
+            
+            // Wait for VRML loader to be available
+            setTimeout(() => {
+                loadVRMLModel(projectId);
+            }, 100);
+            
+            setupEventListeners();
+        }
+
+        function loadProjectData(projectId) {
+            const project = projectData[projectId];
+            if (!project) return;
+
+            document.getElementById('project-title').textContent = project.name;
+            document.getElementById('project-name').textContent = project.name;
+            document.getElementById('project-category').textContent = project.category;
+            document.getElementById('project-description').textContent = project.description;
+            document.getElementById('github-link').href = project.github;
+            document.getElementById('project-thumbnail').src = project.image;
+
+            // Load tech tags
+            const techContainer = document.getElementById('tech-tags');
+            techContainer.innerHTML = project.techStack.map(tech => 
+                `<span class="tech-tag">${tech}</span>`
+            ).join('');
+        }
+
+        function initThreeJS() {
+            const canvas = document.getElementById('three-canvas');
+            const container = canvas.parentElement;
+
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1e1e1e);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(4, 3, 4);
+            camera.lookAt(0, 0, 0);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: canvas, 
+                antialias: true 
+            });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enableZoom = true;
+            controls.enablePan = true;
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+
+            const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
+            fillLight.position.set(-5, 5, -5);
+            scene.add(fillLight);
+
+            // Start animation
+            animate();
+        }
+
+        function loadVRMLModel(projectId) {
+            console.log('Attempting to load VRML model for project:', projectId);
+            
+            // Check if VRMLLoader is available
+            if (typeof THREE.VRMLLoader === 'undefined') {
+                console.error('VRMLLoader not available');
+                createDefaultModel();
+                hideLoadingIndicator();
+                return;
+            }
+
+            const vrmlLoader = new THREE.VRMLLoader();
+            const wrlPath = `./assets/Models/${projectId}.wrl`;
+            
+            console.log('Loading WRL file from:', wrlPath);
+            
+            vrmlLoader.load(
+                wrlPath,
+                function(vrmlScene) {
+                    console.log('WRL file loaded successfully:', vrmlScene);
+                    processVRMLModel(vrmlScene);
+                    hideLoadingIndicator();
+                },
+                function(progress) {
+                    console.log('Loading progress:', progress);
+                },
+                function(error) {
+                    console.error('Error loading WRL file:', error);
+                    console.log('Fallback to default model');
+                    createDefaultModel();
+                    hideLoadingIndicator();
+                }
+            );
+        }
+
+        function processVRMLModel(vrmlScene) {
+            console.log('Processing VRML scene:', vrmlScene);
+            
+            if (!vrmlScene) {
+                console.error('VRML scene is null or undefined');
+                createDefaultModel();
+                return;
+            }
+            
+            const group = new THREE.Group();
+            let meshCount = 0;
+            
+            // Process the VRML scene
+            vrmlScene.traverse(function(child) {
+                if (child.isMesh) {
+                    console.log('Found mesh:', child);
+                    meshCount++;
+                    
+                    // Create a proper material for lighting
+                    const material = new THREE.MeshStandardMaterial({
+                        color: child.material ? (child.material.color || 0x888888) : 0x888888,
+                        roughness: 0.3,
+                        metalness: 0.4,
+                        side: THREE.DoubleSide // Important for VRML models
+                    });
+                    
+                    // Clone the mesh with new material
+                    const mesh = new THREE.Mesh(child.geometry.clone(), material);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    
+                    group.add(mesh);
+                }
+            });
+
+            console.log(`Found ${meshCount} meshes in VRML file`);
+
+            if (group.children.length === 0) {
+                console.warn('No meshes found in VRML file');
+                createDefaultModel();
+                return;
+            }
+
+            // Calculate bounds and center the model
+            const box = new THREE.Box3().setFromObject(group);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            
+            console.log('Model bounds - Center:', center, 'Size:', size);
+            
+            // Move to origin
+            group.position.copy(center.multiplyScalar(-1));
+            
+            // Scale to fit in view (adjust the 3 to make models larger/smaller)
+            const maxDim = Math.max(size.x, size.y, size.z);
+            if (maxDim > 0) {
+                const scale = 3 / maxDim;
+                group.scale.setScalar(scale);
+                console.log('Applied scale:', scale);
+            }
+
+            // Add ground plane
+            addGroundPlane();
+            
+            // Add to scene
+            currentModel = group;
+            scene.add(currentModel);
+            
+            console.log('VRML model successfully added to scene');
+        }
+
+        function addGroundPlane() {
+            const planeGeo = new THREE.PlaneGeometry(20, 20);
+            const planeMat = new THREE.MeshStandardMaterial({ 
+                color: 0x333333, 
+                transparent: true, 
+                opacity: 0.1 
+            });
+            const plane = new THREE.Mesh(planeGeo, planeMat);
+            plane.rotation.x = -Math.PI / 2;
+            plane.position.y = -2;
+            plane.receiveShadow = true;
+            scene.add(plane);
+        }
+
+        function createDefaultModel() {
+            console.log('Creating default fallback model');
+            
+            // Create a more interesting default model
+            const group = new THREE.Group();
+
+            // Main cube
+            const cubeGeo = new THREE.BoxGeometry(2, 2, 2);
+            const cubeMat = new THREE.MeshStandardMaterial({ 
+                color: 0xff6b35,
+                roughness: 0.3,
+                metalness: 0.1
+            });
+            const cube = new THREE.Mesh(cubeGeo, cubeMat);
+            cube.castShadow = true;
+            cube.receiveShadow = true;
+            group.add(cube);
+
+            // Add some cylinders for detail
+            const cylinderGeo = new THREE.CylinderGeometry(0.3, 0.3, 3, 16);
+            const cylinderMat = new THREE.MeshStandardMaterial({ 
+                color: 0x35a7ff,
+                roughness: 0.4,
+                metalness: 0.2
+            });
+            
+            for (let i = 0; i < 4; i++) {
+                const cylinder = new THREE.Mesh(cylinderGeo, cylinderMat);
+                const angle = (i / 4) * Math.PI * 2;
+                cylinder.position.x = Math.cos(angle) * 1.5;
+                cylinder.position.z = Math.sin(angle) * 1.5;
+                cylinder.rotation.x = Math.PI / 2;
+                cylinder.castShadow = true;
+                cylinder.receiveShadow = true;
+                group.add(cylinder);
+            }
+
+            addGroundPlane();
+            
+            currentModel = group;
+            scene.add(currentModel);
+            
+            console.log('Default model created and added to scene');
+        }
+
+        function hideLoadingIndicator() {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        function resetCamera() {
+            camera.position.set(4, 3, 4);
+            camera.lookAt(0, 0, 0);
+            controls.reset();
+            console.log('Camera reset');
+        }
+
+        function toggleWireframe() {
+            if (!currentModel) return;
+            
+            isWireframe = !isWireframe;
+            currentModel.traverse(child => {
+                if (child.isMesh && child.material) {
+                    child.material.wireframe = isWireframe;
+                }
+            });
+            console.log('Wireframe toggled:', isWireframe);
+        }
+
+        // Expose functions globally
+        window.resetCamera3D = resetCamera;
+        window.toggleWireframe3D = toggleWireframe;
+
+        function setupEventListeners() {
+            window.addEventListener('resize', onWindowResize);
+            
+            document.addEventListener('keydown', (event) => {
+                switch(event.key.toLowerCase()) {
+                    case 'r':
+                        resetCamera();
+                        break;
+                    case 'w':
+                        toggleWireframe();
+                        break;
+                }
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            const canvas = document.getElementById('three-canvas');
+            const container = canvas.parentElement;
+            
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+    </script>
+
+    <script src="./assets/js/script.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+
+    <style>
+        .viewer-container {
+            position: relative;
+            width: 100%;
+            height: 70vh;
+            min-height: 500px;
+            background: var(--smoky-black);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        #three-canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+
+        .loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--white-2);
+            z-index: 10;
+            border-radius: 14px;
+        }
+
+        .loader {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--jet);
+            border-top: 4px solid var(--orange-yellow-crayola);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .project-details {
+            padding: 15px 25px;
+        }
+
+        .project-image img {
+            width: 100%;
+            border-radius: 12px;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            margin-bottom: 15px;
+        }
+
+        .project-meta {
+            margin-bottom: 15px;
+        }
+
+        .project-meta p {
+            color: var(--light-gray);
+            font-size: var(--fs-7);
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+
+        .model-controls {
+            margin: 15px 0;
+        }
+
+        .model-controls h3 {
+            color: var(--orange-yellow-crayola);
+            margin-bottom: 10px;
+        }
+
+        .model-controls .info_more-btn {
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .tech-stack h3 {
+            color: var(--orange-yellow-crayola);
+            margin-bottom: 10px;
+        }
+
+        .tech-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tech-tag {
+            background: var(--bg-gradient-jet);
+            color: var(--light-gray);
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: var(--fs-8);
+            border: 1px solid var(--jet);
+        }
+
+        @media (max-width: 580px) {
+            .viewer-container {
+                height: 50vh;
+                min-height: 400px;
+            }
+        }
+    </style>
+</body>
+</html>
